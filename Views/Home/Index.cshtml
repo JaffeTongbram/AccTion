@@ -1,0 +1,16 @@
+﻿@{
+    ViewData["Title"] = "Home";
+}
+
+@if (!User.Identity.IsAuthenticated)
+{
+    <h1>Welcome to JOARDRAN</h1>
+    <p>Manage your account easily — <a asp-controller="Home" asp-action="Registration">Register here</a> or <a asp-controller="Home" asp-action="Login">Login</a>.</p>
+}
+else
+{
+    <div class="alert alert-success">
+        <h4>Welcome back!</h4>
+        <p>Go to your <a asp-controller="Home" asp-action="Profile">Profile</a> or <a asp-controller="Home" asp-action="Dashboard">Dashboard</a></p>
+    </div>
+}

@@ -1,0 +1,131 @@
+@model AccTion.Models.RegisterViewModel
+@{
+    ViewData["Title"] = "Register";
+}
+
+<h2>Register</h2>
+<p>Already have an account? <a href="@Url.Action("Login", "Home")">Login here</a></p>
+
+<!-- Error Message Display -->
+@if (ViewBag.ErrorMessage != null)
+{
+    <div style="color: white; background-color: #dc3545; padding: 12px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #c82333;">
+        <strong>⚠️ @ViewBag.ErrorMessage</strong>
+    </div>
+}
+
+<!-- Success Message Display -->
+@if (ViewBag.SuccessMessage != null)
+{
+    <div style="color: white; background-color: #28a745; padding: 12px; margin-bottom: 15px; border-radius: 5px; border: 1px solid #1e7e34;">
+        <strong>✓ @ViewBag.SuccessMessage</strong>
+    </div>
+}
+
+<form asp-action="Register" method="post" id="registerForm">
+    <div>
+        <label>Name:</label>
+        <input asp-for="Name" required />
+    </div>
+    <div>
+        <label>Email:</label>
+        <input asp-for="Email" type="email" required />
+    </div>
+    <div>
+        <label>Password:</label>
+        <input asp-for="Password" type="password" required />
+    </div>
+    <div>
+        <label>Phone:</label>
+        <input asp-for="PNo" required />
+    </div>
+    
+    <!-- User Type Dropdown -->
+    <div>
+        <label>User Type:</label>
+        <select asp-for="UserTypeId" id="userTypeSelect" required>
+            <option value="">-- Select User Type --</option>
+            <option value="1">Creator</option>
+            <option value="2">Consumer</option>
+            <option value="3" id="adminOption">Admin</option>
+        </select>
+    </div>
+    
+    <!-- Subscription Type Dropdown (Only for Consumer) -->
+    <div id="subscriptionDiv" style="display: none;">
+        <label>Subscription Type:</label>
+        <select asp-for="SubscriptionTypeId" id="subscriptionSelect">
+            <option value="">-- Select Subscription --</option>
+            <option value="1">Gold</option>
+            <option value="2">Premium</option>
+            <option value="3">Luxury</option>
+            <option value="36">ProLux</option>
+        </select>
+    </div>
+    
+    <button type="submit" id="submitBtn">Register</button>
+</form>
+
+@if (ViewBag.Message != null)
+{
+    <p>@ViewBag.Message</p>
+}
+
+<script>
+    let isAdminAvailable = true;
+
+    // Check if admin exists when page loads
+    document.addEventListener('DOMContentLoaded', async function() {
+        try {
+            const response = await fetch('@Url.Action("CheckAdminExists", "Home")');
+            const result = await response.json();
+            isAdminAvailable = !result.adminExists;
+        } catch (error) {
+            console.error('Error checking admin availability:', error);
+        }
+    });
+
+    document.getElementById('userTypeSelect').addEventListener('change', function() {
+        const subscriptionDiv = document.getElementById('subscriptionDiv');
+        const subscriptionSelect = document.getElementById('subscriptionSelect');
+        const submitBtn = document.getElementById('submitBtn');
+        
+        if (this.value === '2') { 
+            // Consumer selected
+            subscriptionDiv.style.display = 'block';
+            subscriptionSelect.required = true;
+            submitBtn.disabled = false;
+        } 
+        else if (this.value === '3') { 
+            // Admin selected - check if available
+            subscriptionDiv.style.display = 'none';
+            subscriptionSelect.required = false;
+            subscriptionSelect.value = '';
+            
+            if (!isAdminAvailable) {
+                alert('⚠️ Cannot register as admin. Admin already exists.');
+                this.value = ''; // Reset selection
+                submitBtn.disabled = false;
+            }
+        } 
+        else {
+            // Creator or no selection
+            subscriptionDiv.style.display = 'none';
+            subscriptionSelect.required = false;
+            subscriptionSelect.value = '';
+            submitBtn.disabled = false;
+        }
+    });
+
+    // Prevent form submission if admin is selected but not available
+    document.getElementById('registerForm').addEventListener('submit', function(e) {
+        const userTypeSelect = document.getElementById('userTypeSelect');
+        
+        if (userTypeSelect.value === '3' && !isAdminAvailable) {
+            e.preventDefault();
+            alert('⚠️ Cannot register as admin. Admin already exists.');
+            userTypeSelect.value = '';
+            return false;
+        }
+    });
+</script>

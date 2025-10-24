@@ -1,0 +1,41 @@
+@model AccTion.Models.LoginViewModel
+@{
+    ViewData["Title"] = "Login";
+}
+@if (User.Identity.IsAuthenticated)
+{
+    <div class="alert alert-info">
+        You are already logged in. <a href="@Url.Action("Dashboard", "Home")">Go to Dashboard</a>
+        </div>
+}
+else
+{
+
+<h2>Login</h2>
+
+<form asp-action="Login" method="post">
+    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+    
+    <div>
+        <label for="Email">Email:</label>
+        <input asp-for="Email" type="email" class="form-control" />
+        <span asp-validation-for="Email" class="text-danger"></span>
+    </div>
+
+    <div>
+        <label for="Password">Password:</label>
+        <input asp-for="Password" type="password" class="form-control" />
+        <span asp-validation-for="Password" class="text-danger"></span>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Login</button>
+</form>
+
+<p>
+    Don't have an account? <a asp-action="Index">Register here</a>
+</p>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}
+}

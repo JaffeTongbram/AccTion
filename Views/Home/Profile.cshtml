@@ -1,0 +1,173 @@
+@model AccTion.Models.UserViewModel
+@{
+    ViewData["Title"] = "My Profile";
+}
+
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3>My Profile</h3>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.Error != null)
+                    {
+                        <div class="alert alert-danger">@ViewBag.Error</div>
+                    }
+                    else
+                    {
+                        <!-- Profile Photo Section -->
+                        <div class="text-center mb-4">
+                            @if (!string.IsNullOrEmpty(Model.PhotoPath))
+                            {
+                                <!-- ✅ FIXED: Add leading slash for proper path resolution -->
+                                <img src="/@Model.PhotoPath" alt="Profile Photo"
+                                     class="rounded-circle" id="profilePhoto"
+                                     style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #007bff;">
+                            }
+                            else
+                            {
+                                <img src="https://via.placeholder.com/150?text=No+Photo" alt="No Photo"
+                                     class="rounded-circle" id="profilePhoto"
+                                     style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #ccc;">
+                            }
+                        </div>
+
+                        <!-- Photo Upload Form -->
+                        <div class="mb-4">
+                            <h5>Update Profile Photo</h5>
+                            <form id="photoUploadForm" enctype="multipart/form-data">
+                                <div class="form-group">
+                                    <input type="file" id="photoFile" name="file" accept="image/*" class="form-control" />
+                                    <small class="form-text text-muted">Allowed: JPG, PNG, GIF (Max 5MB)</small>
+                                </div>
+                                <button type="button" class="btn btn-success mt-2" onclick="uploadPhoto()">
+                                    <span id="uploadSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
+                                    <span id="uploadText">Upload Photo</span>
+                                </button>
+                            </form>
+                            <div id="uploadMessage" class="mt-2"></div>
+                        </div>
+
+                        <!-- User Information -->
+                        <hr />
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Name:</strong>
+                                <p>@Model.Username</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Email:</strong>
+                                <p>@Model.Email</p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Phone Number:</strong>
+                                <p>@Model.PhoneNumber</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>User Type:</strong>
+                                <p>@(Model.UserType == 1 ? "Provider" : Model.UserType == 2 ? "Consumer" : "Admin")</p>
+                            </div>
+                        </div>
+
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Subscription Type:</strong>
+                                <p>@(Model.SubscriptionTypeId.HasValue ? Model.SubscriptionTypeId.ToString() : "N/A")</p>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Registration Date:</strong>
+                                <p>@Model.RegistrationDate.ToString("dd/MM/yyyy")</p>
+                            </div>
+                        </div>
+                    }
+                </div>
+                <div class="card-footer">
+                    <a href="@Url.Action("Dashboard", "Home")" class="btn btn-secondary">Back to Dashboard</a>
+                    <a href="@Url.Action("Logout", "Home")" class="btn btn-danger">Logout</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function uploadPhoto() {
+    var fileInput = document.getElementById('photoFile');
+    var file = fileInput.files[0];
+    var messageDiv = document.getElementById('uploadMessage');
+    var uploadBtn = document.querySelector('button[onclick="uploadPhoto()"]');
+    var spinner = document.getElementById('uploadSpinner');
+    var uploadText = document.getElementById('uploadText');
+
+    if (!file) {
+        messageDiv.innerHTML = '<div class="alert alert-warning">Please select a file</div>';
+        return;
+    }
+
+    // Show loading state
+    uploadBtn.disabled = true;
+    spinner.classList.remove('d-none');
+    uploadText.textContent = 'Uploading...';
+
+    var formData = new FormData();
+    formData.append('file', file);
+
+    var userId = @Model.UserID;
+    var uploadUrl = `/api/User/${userId}/upload-photo`;
+
+    console.log('Uploading to:', uploadUrl); // Debug log
+
+    fetch(uploadUrl, {
+        method: 'POST',
+        body: formData,
+        headers: {
+            // Include JWT token if needed
+            'Authorization': 'Bearer ' + (localStorage.getItem('JwtToken') || '@Context.Session.GetString("JwtToken")')
+        }
+    })
+    .then(response => {
+        console.log('Response status:', response.status); // Debug log
+        return response.json();
+    })
+    .then(data => {
+        console.log('Response data:', data); // Debug log
+        
+        // Reset button state
+        uploadBtn.disabled = false;
+        spinner.classList.add('d-none');
+        uploadText.textContent = 'Upload Photo';
+
+        if (data.message && data.photoPath) {
+            messageDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+            
+            // Update image immediately without page reload
+            var profilePhoto = document.getElementById('profilePhoto');
+            profilePhoto.src = '/' + data.photoPath + '?t=' + new Date().getTime(); // Cache busting
+            
+            // Clear file input
+            fileInput.value = '';
+            
+            // Optional: Reload after 2 seconds to refresh all data
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            messageDiv.innerHTML = '<div class="alert alert-danger">Upload failed: ' + (data.message || 'Unknown error') + '</div>';
+        }
+    })
+    .catch(error => {
+        console.error('Upload error:', error); // Debug log
+        
+        uploadBtn.disabled = false;
+        spinner.classList.add('d-none');
+        uploadText.textContent = 'Upload Photo';
+        
+        messageDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+    });
+}
+</script>
