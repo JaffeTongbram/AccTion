@@ -1,0 +1,23 @@
+@model AccTion.Models.Post
+
+<div class="container mt-4">
+    <h2>Create New Post</h2>
+    <form asp-action="Create" enctype="multipart/form-data">
+        <div class="mb-3">
+            <label class="form-label">Caption</label>
+            <input asp-for="Caption" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Upload Image</label>
+            <input type="file" name="ImageFile" accept="image/*" class="form-control" />
+        </div>
+
+        <div class="mb-3">
+            <label class="form-label">Upload Video</label>
+            <input type="file" name="VideoFile" accept="video/*" class="form-control" />
+        </div>
+
+        <button type="submit" class="btn btn-primary">Post</button>
+    </form>
+</div>

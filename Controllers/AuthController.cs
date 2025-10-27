@@ -13,13 +13,13 @@ namespace AccTion.Controllers
     public class AuthController : ControllerBase
     {
         private readonly PostgresContext _context;
-        private readonly PasswordHelper _passwordHelper;
+        private readonly PasswordHelper _PasswordHelper;
         private readonly JwtTokenHelper _jwtHelper;
 
         public AuthController(PostgresContext context, IConfiguration config)
         {
             _context = context;
-            _passwordHelper = new PasswordHelper();
+            _PasswordHelper = new PasswordHelper();
             _jwtHelper = new JwtTokenHelper(config);
         }
 
@@ -63,7 +63,7 @@ public async Task<IActionResult> Register([FromBody] RegisterDto dto)
     {
         Name = dto.Name!,
         Email = dto.Email!,
-        Password = _passwordHelper.HashPassword(dto.Password!),
+        Password = _PasswordHelper.HashPassword(dto.Password!),
         PNo = dto.PNo,
         UserTypeId = dto.UserTypeId,
         SubscriptionTypeId = dto.SubscriptionTypeId
@@ -87,7 +87,7 @@ public async Task<IActionResult> CheckAdminExists()
         public IActionResult Login([FromBody] LoginRequest request)
         {
             var user = _context.UserTables.FirstOrDefault(u => u.Email == request.Email);
-            if (user == null || !_passwordHelper.VerifyPassword(user.Password, request.Password))
+            if (user == null || !_PasswordHelper.VerifyPassword(user.Password, request.Password))
                 return Unauthorized(new { message = "Invalid email or password" });
 
             var token = _jwtHelper.GenerateToken(user.Email, user.Id, user.UserTypeId);

@@ -15,6 +15,12 @@ public partial class PostgresContext : DbContext
     {
     }
 
+    public virtual DbSet<Interaction> Interactions { get; set; }
+
+    public virtual DbSet<Post> Posts { get; set; }
+
+    public virtual DbSet<Subscriber> Subscribers { get; set; }
+
     public virtual DbSet<SubscriptionType> SubscriptionTypes { get; set; }
 
     public virtual DbSet<UserTable> UserTables { get; set; }
@@ -23,10 +29,92 @@ public partial class PostgresContext : DbContext
 
 //     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 // #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see https://go.microsoft.com/fwlink/?LinkId=723263.
-//         => optionsBuilder.UseNpgsql("Host=localhost;Database=postgres;Username=newwebapp;Password=newwebapp@123");
+//         => optionsBuilder.UseNpgsql("Host=localhost;Port=5432;Database=postgres;Username=newwebapp;Password=newwebapp@123");
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Interaction>(entity =>
+        {
+            entity.HasKey(e => e.InteractionId).HasName("interactions_pkey");
+
+            entity.ToTable("interactions");
+
+            entity.Property(e => e.InteractionId).HasColumnName("interaction_id");
+            entity.Property(e => e.Commentnum).HasColumnName("commentnum");
+            entity.Property(e => e.InteractionUserId).HasColumnName("interaction_user_id");
+            entity.Property(e => e.Likenum).HasColumnName("likenum");
+            entity.Property(e => e.PostId).HasColumnName("post_id");
+            entity.Property(e => e.CommentText).HasColumnName("comment_text"); // ✅ ADD THIS
+            entity.Property(e => e.CreatedAt)
+                  .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                  .HasColumnName("created_at"); 
+
+            // entity.HasOne(d => d.InteractionUser).WithMany(p => p.Interactions)
+            //     .HasForeignKey(d => d.InteractionUserId)
+            //     .HasConstraintName("fk_interaction_user");
+
+            // entity.HasOne(d => d.Post).WithMany(p => p.Interactions)
+            //     .HasForeignKey(d => d.PostId)
+            //     .HasConstraintName("fk_interaction_post");
+        });
+
+        modelBuilder.Entity<Post>(entity =>
+        {
+            entity.HasKey(e => e.PostId).HasName("post_pkey");
+
+            entity.ToTable("post");
+
+            entity.Property(e => e.PostId).HasColumnName("post_id");
+            entity.Property(e => e.Caption)
+                .HasMaxLength(500)
+                .HasColumnName("caption");
+            entity.Property(e => e.CommentCount)
+                .HasDefaultValue(0)
+                .HasColumnName("comment_count");
+            entity.Property(e => e.CreatedAt)
+                .HasDefaultValueSql("CURRENT_TIMESTAMP")
+                .HasColumnName("created_at");
+            entity.Property(e => e.Image)
+                .HasMaxLength(255)
+                .HasColumnName("image");
+            entity.Property(e => e.LikeCount)
+                .HasDefaultValue(0)
+                .HasColumnName("like_count");
+            entity.Property(e => e.SubPermission)
+                .HasMaxLength(10)
+                .HasDefaultValueSql("'Public'::character varying")
+                .HasColumnName("sub_permission");
+            entity.Property(e => e.UserTableId).HasColumnName("user_table_id");
+            entity.Property(e => e.Video)
+                .HasMaxLength(255)
+                .HasColumnName("video");
+
+            // entity.HasOne(d => d.UserTable).WithMany(p => p.Posts)
+            //     .HasForeignKey(d => d.UserTableId)
+            //     .HasConstraintName("fk_post_user");
+        });
+
+        modelBuilder.Entity<Subscriber>(entity =>
+        {
+            entity.HasKey(e => e.SubId).HasName("subscriber_pkey");
+
+            entity.ToTable("subscriber");
+
+            entity.HasIndex(e => new { e.SubscribeBy, e.SubscribeTo }, "uq_subscription").IsUnique();
+
+            entity.Property(e => e.SubId).HasColumnName("sub_id");
+            entity.Property(e => e.SubscribeBy).HasColumnName("subscribe_by");
+            entity.Property(e => e.SubscribeTo).HasColumnName("subscribe_to");
+
+            // entity.HasOne(d => d.SubscribeByNavigation).WithMany(p => p.SubscriberSubscribeByNavigations)
+            //     .HasForeignKey(d => d.SubscribeBy)
+            //     .HasConstraintName("fk_sub_by");
+
+            // entity.HasOne(d => d.SubscribeToNavigation).WithMany(p => p.SubscriberSubscribeToNavigations)
+            //     .HasForeignKey(d => d.SubscribeTo)
+            //     .HasConstraintName("fk_sub_to");
+        });
+
         modelBuilder.Entity<SubscriptionType>(entity =>
         {
             entity.HasKey(e => e.Id).HasName("subscription_type_pkey");
@@ -72,12 +160,9 @@ public partial class PostgresContext : DbContext
                 .HasMaxLength(255)
                 .HasDefaultValueSql("''::character varying")
                 .HasColumnName("password");
+            entity.Property(e => e.PhotoPath).HasMaxLength(255);
             entity.Property(e => e.SubscriptionTypeId).HasColumnName("subscription_type_id");
             entity.Property(e => e.UserTypeId).HasColumnName("user_type_id");
-            entity.Property(e => e.PhotoPath)
-                .HasMaxLength(500)
-                .HasColumnName("PhotoPath");
-            entity.Property(e => e.PhotoData).HasColumnName("PhotoData");
 
             // entity.HasOne(d => d.SubscriptionType).WithMany(p => p.UserTables)
             //     .HasForeignKey(d => d.SubscriptionTypeId)

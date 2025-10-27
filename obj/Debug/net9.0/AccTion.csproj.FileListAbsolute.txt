@@ -207,3 +207,4 @@
 /Users/jaffetongbram/Downloads/AccTion/AccTion/bin/Debug/net9.0/Microsoft.IdentityModel.Protocols.OpenIdConnect.dll
 /Users/jaffetongbram/Downloads/AccTion/AccTion/bin/Debug/net9.0/Microsoft.IdentityModel.Tokens.dll
 /Users/jaffetongbram/Downloads/AccTion/AccTion/bin/Debug/net9.0/System.IdentityModel.Tokens.Jwt.dll
+/Users/jaffetongbram/Downloads/AccTion/AccTion/obj/Debug/net9.0/AccTion.sourcelink.json

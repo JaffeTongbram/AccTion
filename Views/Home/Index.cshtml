@@ -1,16 +1,505 @@
-﻿@{
+﻿@model IEnumerable<AccTion.Models.Post>
+@{
     ViewData["Title"] = "Home";
+}
+
+<!-- Success/Error Messages -->
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
 }
 
 @if (!User.Identity.IsAuthenticated)
 {
-    <h1>Welcome to JOARDRAN</h1>
-    <p>Manage your account easily — <a asp-controller="Home" asp-action="Registration">Register here</a> or <a asp-controller="Home" asp-action="Login">Login</a>.</p>
+    <div class="container mt-4">
+        <div class="text-center p-5 bg-light rounded">
+            <h1 class="display-4">Welcome to JOARDRAN</h1>
+            <p class="lead">Join our community and share your moments</p>
+            <div class="mt-4">
+                <a asp-controller="Home" asp-action="Registration" class="btn btn-primary btn-lg me-2">Register</a>
+                <a asp-controller="Home" asp-action="Login" class="btn btn-outline-primary btn-lg">Login</a>
+            </div>
+        </div>
+    </div>
 }
 else
 {
-    <div class="alert alert-success">
-        <h4>Welcome back!</h4>
-        <p>Go to your <a asp-controller="Home" asp-action="Profile">Profile</a> or <a asp-controller="Home" asp-action="Dashboard">Dashboard</a></p>
+    <!-- Create Post Section -->
+    <div class="container mt-4">
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">✨ Create a Post</h5>
+                <form asp-controller="Home" asp-action="CreatePost" method="post" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <textarea name="caption" class="form-control" rows="3" placeholder="What's on your mind?" required></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">📷 Upload Photo</label>
+                            <input type="file" name="imageFile" accept="image/*" class="form-control" />
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">🎥 Upload Video</label>
+                            <input type="file" name="videoFile" accept="video/*" class="form-control" />
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">📤 Post</button>
+                </form>
+            </div>
+        </div>
     </div>
+}
+
+<!-- All Posts Feed -->
+<div class="container mt-3">
+    <h2 class="mb-4 text-center">All Posts</h2>
+    
+    @if (Model != null && Model.Any())
+    {
+        <div class="row justify-content-center">
+            @foreach (var post in Model)
+            {
+                <div class="col-md-8 mb-4">
+                    <div class="card shadow-sm">
+                        <!-- Post Header -->
+                        <div class="card-header bg-white py-3">
+                        <a asp-controller="Home" asp-action="Profile" asp-route-id="@post.UserTableId" 
+                                        class="text-decoration-none text-dark">
+                        <strong>@post.UserTable?.Name</strong>
+                        </a>
+                        <small class="text-muted float-end">@post.CreatedAt?.ToString("MMM dd, yyyy")</small>
+                        </div>
+
+                        
+                        <!-- Post Media -->
+                        <div class="card-body p-0">
+                            @if (!string.IsNullOrEmpty(post.Image))
+                            {
+                                <img src="@post.Image" class="w-100" alt="Post image" style="max-height: 600px; object-fit: cover;" />
+                            }
+                            @if (!string.IsNullOrEmpty(post.Video))
+                            {
+                                <video controls class="w-100" style="max-height: 600px;">
+                                    <source src="@post.Video" type="video/mp4" />
+                                </video>
+                            }
+                        </div>
+                        
+                        <!-- Post Actions & Info -->
+                        <div class="card-body">
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <div class="mb-3">
+                                    <button class="btn btn-link p-0 me-3 like-btn" data-post-id="@post.PostId" style="text-decoration: none; font-size: 1.5rem;">
+                                        <span class="heart-icon">🤍</span>
+                                    </button>
+                                    <button class="btn btn-link p-0 comment-btn" data-post-id="@post.PostId" style="text-decoration: none; font-size: 1.5rem;">
+                                        💬
+                                    </button>
+                                </div>
+                            }
+                            
+                            <!-- Clickable Counts -->
+                            <div class="mb-2">
+                                <span class="me-3">
+                                    <a href="#" class="text-decoration-none text-dark view-likes" data-post-id="@post.PostId">
+                                        <strong class="like-count" data-post-id="@post.PostId">@post.LikeCount</strong> likes
+                                    </a>
+                                </span>
+                                <span>
+                                    <a href="#" class="text-decoration-none text-dark view-comments-link" data-post-id="@post.PostId">
+                                        <strong class="comment-count" data-post-id="@post.PostId">@post.CommentCount</strong> comments
+                                    </a>
+                                </span>
+                            </div>
+                            
+                            <!-- Caption -->
+                            @if (!string.IsNullOrEmpty(post.Caption))
+                            {
+                                <p class="mb-0">
+                                    <strong>@post.UserTable?.Name:</strong> @post.Caption
+                                </p>
+                            }
+
+                            <!-- Comment Input (Hidden by default, shown when clicking 💬 button) -->
+                            @if (User.Identity.IsAuthenticated)
+                            {
+                                <div class="comment-section mt-3" id="comment-section-@post.PostId" style="display: none;">
+                                    <div class="input-group">
+                                        <input type="text" class="form-control comment-input" placeholder="Add a comment..." data-post-id="@post.PostId" />
+                                        <button class="btn btn-primary submit-comment" data-post-id="@post.PostId">Post</button>
+                                    </div>
+                                </div>
+                            }
+                            
+                            <!-- ✅ REMOVED: Comments display section - comments only shown in modal now -->
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <h4 class="text-muted">No posts yet</h4>
+            <p>Be the first to share something!</p>
+        </div>
+    }
+</div>
+
+<!-- Likes Modal -->
+<div class="modal fade" id="likesModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Likes</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="likesModalBody">
+                <!-- Likes will be loaded here -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Comments Modal -->
+<div class="modal fade" id="commentsModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-scrollable modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Comments</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body" id="commentsModalBody">
+                <!-- Comments will be loaded here -->
+            </div>
+            @if (User.Identity.IsAuthenticated)
+            {
+                <div class="modal-footer">
+                    <div class="input-group w-100">
+                        <input type="text" class="form-control" id="modalCommentInput" placeholder="Add a comment..." />
+                        <button class="btn btn-primary" id="modalSubmitComment">Post</button>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<style>
+    .card {
+        border: 1px solid #dbdbdb;
+        border-radius: 8px;
+    }
+    .card-header {
+        border-bottom: 1px solid #dbdbdb;
+    }
+    .like-btn, .comment-btn {
+        border: none;
+        background: none;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
+    .like-btn:hover, .comment-btn:hover {
+        transform: scale(1.2);
+    }
+    .liked .heart-icon {
+        color: #ed4956;
+    }
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        background: #f0f0f0;
+    }
+    .modal-dialog-scrollable .modal-body {
+        max-height: calc(100vh - 200px);
+        overflow-y: auto;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const token = '@(Context.Session.GetString("JwtToken") ?? "")';
+            let currentPostIdForModal = null; // Track which post's modal is open
+            
+            console.log('Token loaded:', token ? 'Yes' : 'No');
+
+            // Load initial like status for all posts
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                const postId = btn.getAttribute('data-post-id');
+                checkLikeStatus(postId, token);
+            });
+
+            // ✅ LIKE FUNCTIONALITY
+            document.querySelectorAll('.like-btn').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const postId = this.getAttribute('data-post-id');
+                    
+                    if (!token) {
+                        alert('Please login to like posts');
+                        return;
+                    }
+
+                    try {
+                        const response = await fetch(`/api/Interaction/like/${postId}`, {
+                            method: 'POST',
+                            headers: {
+                                'Authorization': `Bearer ${token}`,
+                                'Content-Type': 'application/json'
+                            }
+                        });
+
+                        if (!response.ok) {
+                            throw new Error(`HTTP error! status: ${response.status}`);
+                        }
+
+                        const data = await response.json();
+                        
+                        if (data.success) {
+                            const heartIcon = this.querySelector('.heart-icon');
+                            if (data.liked) {
+                                heartIcon.textContent = '❤️';
+                                this.classList.add('liked');
+                            } else {
+                                heartIcon.textContent = '🤍';
+                                this.classList.remove('liked');
+                            }
+                            
+                            document.querySelector(`.like-count[data-post-id="${postId}"]`).textContent = data.likeCount;
+                        }
+                    } catch (error) {
+                        console.error('Error liking post:', error);
+                        alert('Failed to like post. Please try again.');
+                    }
+                });
+            });
+
+            // ✅ VIEW LIKES - Click on like count
+            document.querySelectorAll('.view-likes').forEach(link => {
+                link.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const postId = this.getAttribute('data-post-id');
+                    await showLikes(postId);
+                });
+            });
+
+            // ✅ SHOW COMMENT INPUT - Click on 💬 button
+            document.querySelectorAll('.comment-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const postId = this.getAttribute('data-post-id');
+                    const commentSection = document.getElementById(`comment-section-${postId}`);
+                    
+                    if (commentSection.style.display === 'none') {
+                        commentSection.style.display = 'block';
+                        commentSection.querySelector('.comment-input').focus();
+                    } else {
+                        commentSection.style.display = 'none';
+                    }
+                });
+            });
+
+            // ✅ VIEW COMMENTS - Click on comment count text
+            document.querySelectorAll('.view-comments-link').forEach(link => {
+                link.addEventListener('click', async function(e) {
+                    e.preventDefault();
+                    const postId = this.getAttribute('data-post-id');
+                    await showCommentsModal(postId);
+                });
+            });
+
+            // ✅ SUBMIT COMMENT (from inline input below post)
+            document.querySelectorAll('.submit-comment').forEach(btn => {
+                btn.addEventListener('click', async function() {
+                    const postId = this.getAttribute('data-post-id');
+                    const input = document.querySelector(`.comment-input[data-post-id="${postId}"]`);
+                    await submitComment(postId, input);
+                });
+            });
+
+            // ✅ SUBMIT COMMENT (from modal)
+            document.getElementById('modalSubmitComment')?.addEventListener('click', async function() {
+                if (currentPostIdForModal) {
+                    const input = document.getElementById('modalCommentInput');
+                    await submitComment(currentPostIdForModal, input, true);
+                }
+            });
+
+            // Allow Enter key to submit comment in modal
+            document.getElementById('modalCommentInput')?.addEventListener('keypress', async function(e) {
+                if (e.key === 'Enter' && currentPostIdForModal) {
+                    await submitComment(currentPostIdForModal, this, true);
+                }
+            });
+
+            // ✅ FUNCTIONS
+
+            async function checkLikeStatus(postId, token) {
+                if (!token) return;
+                
+                try {
+                    const response = await fetch(`/api/Interaction/check-like/${postId}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    });
+
+                    if (!response.ok) return;
+
+                    const data = await response.json();
+                    const likeBtn = document.querySelector(`.like-btn[data-post-id="${postId}"]`);
+                    
+                    if (!likeBtn) return;
+                    
+                    const heartIcon = likeBtn.querySelector('.heart-icon');
+                    
+                    if (data.liked) {
+                        heartIcon.textContent = '❤️';
+                        likeBtn.classList.add('liked');
+                    }
+                } catch (error) {
+                    console.error('Error checking like status:', error);
+                }
+            }
+
+            async function submitComment(postId, input, isModal = false) {
+                const commentText = input.value.trim();
+
+                if (!commentText) {
+                    alert('Please enter a comment');
+                    return;
+                }
+
+                if (!token) {
+                    alert('Please login to comment');
+                    return;
+                }
+
+                try {
+                    console.log('Submitting comment:', commentText);
+
+                    const response = await fetch(`/api/Interaction/comment/${postId}`, {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({ commentText: commentText })
+                    });
+
+                    if (!response.ok) {
+                        const errorText = await response.text();
+                        console.error('Server error:', errorText);
+                        throw new Error(`HTTP error! status: ${response.status}`);
+                    }
+
+                    const data = await response.json();
+                    
+                    if (data.success) {
+                        // Update comment count
+                        document.querySelector(`.comment-count[data-post-id="${postId}"]`).textContent = data.commentCount;
+                        
+                        // Clear input
+                        input.value = '';
+                        
+                        // Hide inline comment section if not modal
+                        if (!isModal) {
+                            document.getElementById(`comment-section-${postId}`).style.display = 'none';
+                        } else {
+                            // Reload comments in modal
+                            await loadCommentsInModal(postId);
+                        }
+                        
+                        if (!isModal) {
+                            alert('Comment added successfully!');
+                        }
+                    } else {
+                        alert('Failed to add comment: ' + (data.message || 'Unknown error'));
+                    }
+                } catch (error) {
+                    console.error('Error adding comment:', error);
+                    alert('Failed to add comment. Please try again.');
+                }
+            }
+
+            async function showLikes(postId) {
+                try {
+                    const response = await fetch(`/api/Interaction/likes/${postId}`);
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch likes');
+                    }
+                    
+                    const data = await response.json();
+                    const modalBody = document.getElementById('likesModalBody');
+                    
+                    if (!data.likes || data.likes.length === 0) {
+                        modalBody.innerHTML = '<p class="text-center text-muted py-4">No likes yet</p>';
+                    } else {
+                        modalBody.innerHTML = data.likes.map(l => `
+                            <div class="d-flex align-items-center p-3 border-bottom">
+                                <img src="${l.photoPath || '/images/default-avatar.png'}" 
+                                     class="user-avatar me-3" 
+                                     alt="${l.username}"
+                                     onerror="this.src='/images/default-avatar.png'">
+                                <div>
+                                    <strong>${l.username}</strong>
+                                    <div><small class="text-muted">User #${l.userId}</small></div>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                    
+                    new bootstrap.Modal(document.getElementById('likesModal')).show();
+                } catch (error) {
+                    console.error('Error showing likes:', error);
+                    alert('Failed to load likes. Please try again.');
+                }
+            }
+
+            async function showCommentsModal(postId) {
+                currentPostIdForModal = postId;
+                await loadCommentsInModal(postId);
+                new bootstrap.Modal(document.getElementById('commentsModal')).show();
+            }
+
+            async function loadCommentsInModal(postId) {
+                try {
+                    const response = await fetch(`/api/Interaction/comments/${postId}`);
+                    
+                    if (!response.ok) {
+                        throw new Error('Failed to fetch comments');
+                    }
+                    
+                    const data = await response.json();
+                    const modalBody = document.getElementById('commentsModalBody');
+                    
+                    if (!data.comments || data.comments.length === 0) {
+                        modalBody.innerHTML = '<p class="text-center text-muted py-4">No comments yet. Be the first to comment!</p>';
+                    } else {
+                        modalBody.innerHTML = data.comments.map(c => `
+                            <div class="d-flex p-3 border-bottom">
+                                <img src="${c.photoPath || '/images/default-avatar.png'}" 
+                                     class="user-avatar me-3" 
+                                     alt="${c.username}"
+                                     onerror="this.src='/images/default-avatar.png'">
+                                <div class="flex-grow-1">
+                                    <div><strong>${c.username}</strong> <small class="text-muted">• ${new Date(c.createdAt).toLocaleDateString()}</small></div>
+                                    <p class="mb-0 mt-1">${c.commentText}</p>
+                                </div>
+                            </div>
+                        `).join('');
+                    }
+                } catch (error) {
+                    console.error('Error loading comments:', error);
+                    document.getElementById('commentsModalBody').innerHTML = 
+                        '<p class="text-center text-danger py-4">Failed to load comments. Please try again.</p>';
+                }
+            }
+        });
+    </script>
 }

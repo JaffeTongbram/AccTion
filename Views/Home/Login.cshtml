@@ -10,30 +10,32 @@
 }
 else
 {
-
-<h2>Login</h2>
+<div class="d-flex justify-content-center">
+<h2><strong><em>Login To Your AccTion</em></strong></h2>
+</div>
 
 <form asp-action="Login" method="post">
     <div asp-validation-summary="ModelOnly" class="text-danger"></div>
     
-    <div>
-        <label for="Email">Email:</label>
-        <input asp-for="Email" type="email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
+    <div class ="d-flex justify-content-center mb-3">
+        <input asp-for="Email" type="email" class="form-control" placeholder="Email" />
+        <span asp-validation-for="Email" class="text-danger ms-2"></span>
     </div>
 
-    <div>
-        <label for="Password">Password:</label>
-        <input asp-for="Password" type="password" class="form-control" />
-        <span asp-validation-for="Password" class="text-danger"></span>
+    <div class ="d-flex justify-content-center mb-3">
+        <input asp-for="Password" type="password" class="form-control" placeholder="password"/>
+        <span asp-validation-for="Password" class="text-danger ms-2"></span>
     </div>
-
-    <button type="submit" class="btn btn-primary">Login</button>
+    
+    <div class="d-flex justify-content-center mb-3">
+    <button type="submit" class="btn btn-primary btn-lg px-5">Login</button>
+    </div>
 </form>
-
+<div class="d-flex justify-content-center">
 <p>
     Don't have an account? <a asp-action="Index">Register here</a>
 </p>
+</div>
 
 @section Scripts {
     @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}

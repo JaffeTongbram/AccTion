@@ -1,173 +1,335 @@
 @model AccTion.Models.UserViewModel
 @{
-    ViewData["Title"] = "My Profile";
+    ViewData["Title"] = Model.Username + "'s Profile";
+    var isOwnProfile = ViewBag.IsOwnProfile ?? false;
+    var userPosts = ViewBag.UserPosts as List<AccTion.Models.Post> ?? new List<AccTion.Models.Post>();
+    var postCount = ViewBag.PostCount ?? 0;
 }
 
-<div class="container mt-5">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h3>My Profile</h3>
+<div class="container mt-4">
+    <!-- Profile Header Section -->
+    <div class="row mb-5">
+        <div class="col-md-4 text-center">
+            @if (!string.IsNullOrEmpty(Model.PhotoPath))
+            {
+                <img src="/@Model.PhotoPath" alt="@Model.Username"
+                     class="rounded-circle profile-picture" id="profilePhoto"
+                     style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #dbdbdb;">
+            }
+            else
+            {
+                <div class="rounded-circle profile-picture d-flex align-items-center justify-content-center"
+                     style="width: 150px; height: 150px; background: #f0f0f0; border: 3px solid #dbdbdb; margin: 0 auto;">
+                    <span style="font-size: 60px; color: #999;">@Model.Username.Substring(0, 1).ToUpper()</span>
                 </div>
-                <div class="card-body">
-                    @if (ViewBag.Error != null)
-                    {
-                        <div class="alert alert-danger">@ViewBag.Error</div>
-                    }
-                    else
-                    {
-                        <!-- Profile Photo Section -->
-                        <div class="text-center mb-4">
+            }
+        </div>
+
+        <div class="col-md-8">
+            <div class="mb-3">
+                <h2 class="d-inline-block mb-0">@Model.Username</h2>
+                @if (isOwnProfile)
+                {
+                    <button class="btn btn-outline-secondary btn-sm ms-3" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                        Edit Profile
+                    </button>
+                }
+            </div>
+
+            <!-- Stats -->
+            <div class="mb-4">
+                <span class="me-4"><strong>@postCount</strong> posts</span>
+                <span class="me-4"><strong>0</strong> followers</span>
+                <span><strong>0</strong> following</span>
+            </div>
+
+            <!-- User Info -->
+            <div>
+                <p class="mb-1"><strong>@Model.Username</strong></p>
+                <p class="text-muted mb-1">@Model.Email</p>
+                <p class="text-muted mb-1">📞 @Model.PhoneNumber</p>
+                <p class="mb-0">
+                    <span class="badge bg-primary">
+                        @(Model.UserType == 1 ? "Provider" : Model.UserType == 2 ? "Consumer" : "Admin")
+                    </span>
+                    <span class="text-muted ms-2">Joined @Model.RegistrationDate.ToString("MMM yyyy")</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <hr class="mb-4">
+
+    <!-- Posts Section Header -->
+    <div class="d-flex justify-content-center align-items-center mb-4 border-top pt-3">
+        <svg aria-label="Posts" class="me-2" fill="currentColor" height="12" role="img" viewBox="0 0 24 24" width="12">
+            <rect fill="none" height="18" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" width="18" x="3" y="3"></rect>
+            <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="9.015" x2="9.015" y1="3" y2="21"></line>
+            <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="14.985" x2="14.985" y1="3" y2="21"></line>
+            <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="21" x2="3" y1="9.015" y2="9.015"></line>
+            <line fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" x1="21" x2="3" y1="14.985" y2="14.985"></line>
+        </svg>
+        <span style="font-size: 12px; font-weight: 600; letter-spacing: 1px;">POSTS</span>
+    </div>
+
+    <!-- Posts Grid -->
+    @if (userPosts.Any())
+    {
+        <div class="row g-1">
+            @foreach (var post in userPosts)
+            {
+                <div class="col-md-4 col-sm-6">
+                    <div class="post-thumbnail position-relative" data-post-id="@post.PostId" style="cursor: pointer;">
+                        <!-- Post Image/Video Thumbnail -->
+                        @if (!string.IsNullOrEmpty(post.Image))
+                        {
+                            <img src="@post.Image" class="w-100" alt="Post" style="aspect-ratio: 1/1; object-fit: cover;">
+                        }
+                        else if (!string.IsNullOrEmpty(post.Video))
+                        {
+                            <video class="w-100" style="aspect-ratio: 1/1; object-fit: cover;">
+                                <source src="@post.Video" type="video/mp4">
+                            </video>
+                            <div class="position-absolute top-0 end-0 m-2">
+                                <span class="badge bg-dark">▶️ VIDEO</span>
+                            </div>
+                        }
+
+                        <!-- Hover Overlay with Stats -->
+                        <div class="post-overlay position-absolute top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                             style="background: rgba(0,0,0,0); transition: background 0.3s;">
+                            <div class="text-white" style="opacity: 0; transition: opacity 0.3s;">
+                                <span class="me-4">
+                                    <strong>❤️ @post.LikeCount</strong>
+                                </span>
+                                <span>
+                                    <strong>💬 @post.CommentCount</strong>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="text-center py-5">
+            <div class="mb-3">
+                <svg aria-label="Camera" class="text-muted" fill="currentColor" height="62" role="img" viewBox="0 0 96 96" width="62">
+                    <circle cx="48" cy="48" fill="none" r="47" stroke="currentColor" stroke-miterlimit="10" stroke-width="2"></circle>
+                    <ellipse cx="48.002" cy="49.524" fill="none" rx="10.444" ry="10.476" stroke="currentColor" stroke-linejoin="round" stroke-width="2.095"></ellipse>
+                    <path d="M63.994 69A8.02 8.02 0 0 0 72 60.968V39.456a8.023 8.023 0 0 0-8.01-8.035h-1.749a4.953 4.953 0 0 1-4.591-3.242C56.61 25.696 54.859 25 52.469 25h-8.983c-2.39 0-4.141.695-5.181 3.178a4.954 4.954 0 0 1-4.592 3.242H32.01a8.024 8.024 0 0 0-8.012 8.035v21.512A8.02 8.02 0 0 0 32.007 69Z" fill="none" stroke="currentColor" stroke-linejoin="round" stroke-width="2"></path>
+                </svg>
+            </div>
+            @if (isOwnProfile)
+            {
+                <h3>No Posts Yet</h3>
+                <p class="text-muted">Start sharing your moments!</p>
+                <a asp-controller="Home" asp-action="Index" class="btn btn-primary">Create Your First Post</a>
+            }
+            else
+            {
+                <h3>No Posts Yet</h3>
+                <p class="text-muted">This user hasn't shared anything yet.</p>
+            }
+        </div>
+    }
+
+    <!-- Back Button -->
+    <div class="text-center mt-5 mb-3">
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">← Back to Feed</a>
+        @if (isOwnProfile)
+        {
+            <a asp-controller="Home" asp-action="Logout" class="btn btn-outline-danger ms-2">Logout</a>
+        }
+    </div>
+</div>
+
+<!-- Edit Profile Modal (Only for own profile) -->
+@if (isOwnProfile)
+{
+    <div class="modal fade" id="editProfileModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Edit Profile</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="photoUploadForm" enctype="multipart/form-data">
+                        <div class="text-center mb-3">
                             @if (!string.IsNullOrEmpty(Model.PhotoPath))
                             {
-                                <!-- ✅ FIXED: Add leading slash for proper path resolution -->
-                                <img src="/@Model.PhotoPath" alt="Profile Photo"
-                                     class="rounded-circle" id="profilePhoto"
-                                     style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #007bff;">
+                                <img src="/@Model.PhotoPath" alt="Profile"
+                                     class="rounded-circle"
+                                     style="width: 100px; height: 100px; object-fit: cover;">
                             }
                             else
                             {
-                                <img src="https://via.placeholder.com/150?text=No+Photo" alt="No Photo"
-                                     class="rounded-circle" id="profilePhoto"
-                                     style="width: 150px; height: 150px; object-fit: cover; border: 3px solid #ccc;">
+                                <div class="rounded-circle d-inline-flex align-items-center justify-content-center"
+                                     style="width: 100px; height: 100px; background: #f0f0f0;">
+                                    <span style="font-size: 40px; color: #999;">@Model.Username.Substring(0, 1).ToUpper()</span>
+                                </div>
                             }
                         </div>
-
-                        <!-- Photo Upload Form -->
-                        <div class="mb-4">
-                            <h5>Update Profile Photo</h5>
-                            <form id="photoUploadForm" enctype="multipart/form-data">
-                                <div class="form-group">
-                                    <input type="file" id="photoFile" name="file" accept="image/*" class="form-control" />
-                                    <small class="form-text text-muted">Allowed: JPG, PNG, GIF (Max 5MB)</small>
-                                </div>
-                                <button type="button" class="btn btn-success mt-2" onclick="uploadPhoto()">
-                                    <span id="uploadSpinner" class="spinner-border spinner-border-sm d-none" role="status"></span>
-                                    <span id="uploadText">Upload Photo</span>
-                                </button>
-                            </form>
-                            <div id="uploadMessage" class="mt-2"></div>
+                        <div class="mb-3">
+                            <label class="form-label">Change Profile Photo</label>
+                            <input type="file" id="photoFile" name="file" accept="image/*" class="form-control" />
+                            <small class="text-muted">JPG, PNG, GIF (Max 5MB)</small>
                         </div>
-
-                        <!-- User Information -->
-                        <hr />
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <strong>Name:</strong>
-                                <p>@Model.Username</p>
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Email:</strong>
-                                <p>@Model.Email</p>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <strong>Phone Number:</strong>
-                                <p>@Model.PhoneNumber</p>
-                            </div>
-                            <div class="col-md-6">
-                                <strong>User Type:</strong>
-                                <p>@(Model.UserType == 1 ? "Provider" : Model.UserType == 2 ? "Consumer" : "Admin")</p>
-                            </div>
-                        </div>
-
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <strong>Subscription Type:</strong>
-                                <p>@(Model.SubscriptionTypeId.HasValue ? Model.SubscriptionTypeId.ToString() : "N/A")</p>
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Registration Date:</strong>
-                                <p>@Model.RegistrationDate.ToString("dd/MM/yyyy")</p>
-                            </div>
-                        </div>
-                    }
+                        <button type="button" class="btn btn-primary w-100" onclick="uploadPhoto()">
+                            <span id="uploadSpinner" class="spinner-border spinner-border-sm d-none"></span>
+                            <span id="uploadText">Update Photo</span>
+                        </button>
+                        <div id="uploadMessage" class="mt-2"></div>
+                    </form>
                 </div>
-                <div class="card-footer">
-                    <a href="@Url.Action("Dashboard", "Home")" class="btn btn-secondary">Back to Dashboard</a>
-                    <a href="@Url.Action("Logout", "Home")" class="btn btn-danger">Logout</a>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Post Detail Modal -->
+<div class="modal fade" id="postDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-body p-0">
+                <div class="row g-0">
+                    <!-- Left: Media -->
+                    <div class="col-md-8 bg-black d-flex align-items-center justify-content-center">
+                        <div id="postMediaContainer" style="max-height: 600px; width: 100%;"></div>
+                    </div>
+                    <!-- Right: Details -->
+                    <div class="col-md-4">
+                        <div class="p-3 border-bottom">
+                            <div class="d-flex align-items-center">
+                                <img src="/@Model.PhotoPath" class="rounded-circle me-2" style="width: 32px; height: 32px; object-fit: cover;" alt="">
+                                <strong>@Model.Username</strong>
+                                <button type="button" class="btn-close ms-auto" data-bs-dismiss="modal"></button>
+                            </div>
+                        </div>
+                        <div class="p-3" style="height: 400px; overflow-y: auto;">
+                            <div id="postDetailsContent">
+                                <!-- Post details will load here -->
+                            </div>
+                        </div>
+                        <div class="p-3 border-top">
+                            <div id="postActionsContent">
+                                <!-- Like/comment actions -->
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 </div>
 
-<script>
-function uploadPhoto() {
-    var fileInput = document.getElementById('photoFile');
-    var file = fileInput.files[0];
-    var messageDiv = document.getElementById('uploadMessage');
-    var uploadBtn = document.querySelector('button[onclick="uploadPhoto()"]');
-    var spinner = document.getElementById('uploadSpinner');
-    var uploadText = document.getElementById('uploadText');
+<style>
+    .post-thumbnail:hover .post-overlay {
+        background: rgba(0,0,0,0.5) !important;
+    }
+    .post-thumbnail:hover .post-overlay > div {
+        opacity: 1 !important;
+    }
+    .profile-picture {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+</style>
 
-    if (!file) {
-        messageDiv.innerHTML = '<div class="alert alert-warning">Please select a file</div>';
-        return;
+@section Scripts {
+<script>
+    const token = '@(Context.Session.GetString("JwtToken") ?? "")';
+
+    // Upload photo function
+    function uploadPhoto() {
+        var fileInput = document.getElementById('photoFile');
+        var file = fileInput.files[0];
+        var messageDiv = document.getElementById('uploadMessage');
+        var uploadBtn = document.querySelector('button[onclick="uploadPhoto()"]');
+        var spinner = document.getElementById('uploadSpinner');
+        var uploadText = document.getElementById('uploadText');
+
+        if (!file) {
+            messageDiv.innerHTML = '<div class="alert alert-warning">Please select a file</div>';
+            return;
+        }
+
+        uploadBtn.disabled = true;
+        spinner.classList.remove('d-none');
+        uploadText.textContent = 'Uploading...';
+
+        var formData = new FormData();
+        formData.append('file', file);
+
+        fetch(`/api/User/@Model.UserID/upload-photo`, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'Authorization': 'Bearer ' + token
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            uploadBtn.disabled = false;
+            spinner.classList.add('d-none');
+            uploadText.textContent = 'Update Photo';
+
+            if (data.message && data.photoPath) {
+                messageDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                messageDiv.innerHTML = '<div class="alert alert-danger">Upload failed</div>';
+            }
+        })
+        .catch(error => {
+            uploadBtn.disabled = false;
+            spinner.classList.add('d-none');
+            uploadText.textContent = 'Update Photo';
+            messageDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+        });
     }
 
-    // Show loading state
-    uploadBtn.disabled = true;
-    spinner.classList.remove('d-none');
-    uploadText.textContent = 'Uploading...';
-
-    var formData = new FormData();
-    formData.append('file', file);
-
-    var userId = @Model.UserID;
-    var uploadUrl = `/api/User/${userId}/upload-photo`;
-
-    console.log('Uploading to:', uploadUrl); // Debug log
-
-    fetch(uploadUrl, {
-        method: 'POST',
-        body: formData,
-        headers: {
-            // Include JWT token if needed
-            'Authorization': 'Bearer ' + (localStorage.getItem('JwtToken') || '@Context.Session.GetString("JwtToken")')
-        }
-    })
-    .then(response => {
-        console.log('Response status:', response.status); // Debug log
-        return response.json();
-    })
-    .then(data => {
-        console.log('Response data:', data); // Debug log
-        
-        // Reset button state
-        uploadBtn.disabled = false;
-        spinner.classList.add('d-none');
-        uploadText.textContent = 'Upload Photo';
-
-        if (data.message && data.photoPath) {
-            messageDiv.innerHTML = '<div class="alert alert-success">' + data.message + '</div>';
-            
-            // Update image immediately without page reload
-            var profilePhoto = document.getElementById('profilePhoto');
-            profilePhoto.src = '/' + data.photoPath + '?t=' + new Date().getTime(); // Cache busting
-            
-            // Clear file input
-            fileInput.value = '';
-            
-            // Optional: Reload after 2 seconds to refresh all data
-            setTimeout(() => {
-                location.reload();
-            }, 2000);
-        } else {
-            messageDiv.innerHTML = '<div class="alert alert-danger">Upload failed: ' + (data.message || 'Unknown error') + '</div>';
-        }
-    })
-    .catch(error => {
-        console.error('Upload error:', error); // Debug log
-        
-        uploadBtn.disabled = false;
-        spinner.classList.add('d-none');
-        uploadText.textContent = 'Upload Photo';
-        
-        messageDiv.innerHTML = '<div class="alert alert-danger">Error: ' + error.message + '</div>';
+    // View post details
+    document.querySelectorAll('.post-thumbnail').forEach(thumbnail => {
+        thumbnail.addEventListener('click', async function() {
+            const postId = this.getAttribute('data-post-id');
+            await showPostDetail(postId);
+        });
     });
-}
+
+    async function showPostDetail(postId) {
+        try {
+            const response = await fetch(`/api/Post/${postId}`);
+            const post = await response.json();
+
+            // Show media
+            const mediaContainer = document.getElementById('postMediaContainer');
+            if (post.image) {
+                mediaContainer.innerHTML = `<img src="${post.image}" class="w-100" style="max-height: 600px; object-fit: contain;">`;
+            } else if (post.video) {
+                mediaContainer.innerHTML = `<video controls class="w-100" style="max-height: 600px;"><source src="${post.video}" type="video/mp4"></video>`;
+            }
+
+            // Show details
+            document.getElementById('postDetailsContent').innerHTML = `
+                <p><strong>@Model.Username</strong> ${post.caption || ''}</p>
+                <small class="text-muted">${new Date(post.createdAt).toLocaleDateString()}</small>
+            `;
+
+            // Show actions
+            document.getElementById('postActionsContent').innerHTML = `
+                <div class="mb-2">
+                    <span class="me-3"><strong>${post.likeCount}</strong> likes</span>
+                    <span><strong>${post.commentCount}</strong> comments</span>
+                </div>
+            `;
+
+            new bootstrap.Modal(document.getElementById('postDetailModal')).show();
+        } catch (error) {
+            console.error('Error loading post:', error);
+        }
+    }
 </script>
+}

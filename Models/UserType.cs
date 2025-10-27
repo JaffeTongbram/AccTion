@@ -9,5 +9,5 @@ public partial class UserType
 
     public string TypeName { get; set; } = null!;
 
-    // public virtual ICollection<UserTable> UserTables { get; set; } = new List<UserTable>();
+    //public virtual ICollection<UserTable> UserTables { get; set; } = new List<UserTable>();
 }
